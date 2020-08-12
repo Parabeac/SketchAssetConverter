@@ -1,3 +1,4 @@
 import wrapVector from './service/vector_service'
 
-wrapVector('JSON')
+const shapeGroup = require('../assets/vector_test.json')
+wrapVector(shapeGroup)

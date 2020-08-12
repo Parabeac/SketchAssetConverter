@@ -1,80 +1,60 @@
-import * as SketchFile from 'sketch-file'
-import fs from 'fs'
-import { create } from 'domain'
-
+const fs = require('fs-extra')
 const { sep } = require('path')
 const del = require('del')
-const JSZip = require('jszip')
+const { exec } = require('child_process')
+const { Sketch, Page, Artboard, ShapeGroup } = require('sketch-constructor')
 
-const vectorPath = './assets/vector/'
+const sketchtoolProxy = './scripts/sketchtool_proxy.sh'
+const vectorVolume = './dist/vector_volumes'
+const cleanUpLimit = 3
+
+fs.ensureDirSync(`${vectorVolume}`)
 
 /**
  * wrapping the shape group into a SketchFile so the sketch tool
  * could be apply to it and extract as PNG.
  * @param shapeGroup - vector that is going to be converted into a SketchFile
  */
-export default function wrapVector (shapeGroup) {
-  console.log('Entered function')
-  var file = SketchFile.createNewSketchFile()
-  // fs.writeFile(vectorPath, 'lyrics', (err) => {
-  //   // throws an error, you could also catch it here
-  //   if (err) throw err
-
-  //   // success case, the file was saved
-  // })
-  // createSketchFile('temp vector')
-  console.log(file)
-  console.log(shapeGroup)
-  createSketchFile('doc', 'meta', 'user')
-  // cleanVectorDir()
-}
-
-async function createSketchFile (document, meta, user) {
-  if (!fs.existsSync(vectorPath)) {
-    fs.mkdir(vectorPath, (err) => {
-      if (err) throw err
-    })
-  }
-  // Create the vector parent directory.
-  fs.mkdtemp(`${vectorPath}${sep}`, async (err, directory) => {
-    if (err) throw err
-    console.log(directory)
-
-    // Creating the essential sketch file
-    var zip = new JSZip()
-    await createAndZipFile(directory + '/document.json', document, zip)
-    await createAndZipFile(directory + '/meta.json', meta, zip)
-    await createAndZipFile(directory + '/user.json', user, zip)
-    await createAndZipFile(directory + '/pages', null, zip, true)
-
-    zip.generateNodeStream({ type: 'nodebuffer', streamFiles: true })
-      .pipe(fs.createWriteStream(directory + '/vector.sketch'))
+export default async function wrapVector (shapeGroup) {
+  var sketch = new Sketch()
+  var group = new ShapeGroup(shapeGroup)
+  var page = new Page({
+    name: 'testPage'
   })
-}
+  var artboard = new Artboard({
+    name: 'vector',
+    frame: {
+      width: group.frame.width,
+      height: group.frame.height
+    }
+  })
+  artboard.addLayer(group)
+  page.addArtboard(artboard)
+  sketch.addPage(page)
 
-async function createFile (filePath, fileData, isDirectory = false) {
-  isDirectory
-    ? fs.mkdir(filePath, (err) => {
-      if (err) throw err
-    })
-    : fs.writeFile(filePath, fileData, (err) => {
-      if (err) throw err
-    })
-}
+  var tempPath = fs.mkdtempSync(`${vectorVolume}${sep}`)
 
-async function createAndZipFile (filePath, fileData, zip, isDirectory = false) {
-  await createFile(filePath, fileData, isDirectory)
-  isDirectory ? zip.file(filePath) : zip.folder(filePath)
+  // Creating the sketch file where we are going to inject the shape group.
+  await sketch.build(`${tempPath}/vector.sketch`).then(() => {
+    console.log('Built')
+  })
+  exec(`sh ${sketchtoolProxy} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr) => {
+    if (err) throw err
+    console.log(stdout)
+    console.log(stderr)
+  })
+  cleanVectorDir()
 }
 
 /**
- * Deleting the assets folder for the vectors
+ * Deletes the directory of the vectors if it reaches the limit on directory size
  */
 async function cleanVectorDir () {
-  del(vectorPath)
-  fs.mkdir(vectorPath, (err) => {
+  fs.readdir(vectorVolume, (err, files) => {
     if (err) throw err
-    console.log('created the vector folder')
+    if (files.length >= cleanUpLimit) {
+      del(vectorVolume)
+    }
   })
-  return vectorPath
+  return vectorVolume
 }
