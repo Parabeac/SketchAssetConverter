@@ -6,6 +6,16 @@ export default async function getPreview (){
 
 }
 
-export async function getPagesImages(){
+/**
+ * Getting the images of the Pages
+ */
+export async function getPagesImages() {
+
+}
+
+/**
+ * Extracting all the images from the sketch file.
+ */
+export async function allImages() {
 
 }
