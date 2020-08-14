@@ -1,14 +1,14 @@
+import { SKETCHTOOL_PROXY, VECTOR_VOLUME } from '../config/constants'
+
 const fs = require('fs-extra')
 const { sep } = require('path')
 const del = require('del')
 const { exec } = require('child_process')
 const { Sketch, Page, Artboard, ShapeGroup } = require('sketch-constructor')
 
-const sketchtoolProxy = './scripts/sketchtool_proxy.sh'
-const vectorVolume = './dist/vector_volumes'
 const cleanUpLimit = 3
 
-fs.ensureDirSync(`${vectorVolume}`)
+fs.ensureDirSync(`${VECTOR_VOLUME}`)
 
 /**
  * wrapping the shape group into a SketchFile so the sketch tool
@@ -32,13 +32,13 @@ export default async function wrapVector (shapeGroup) {
   page.addArtboard(artboard)
   sketch.addPage(page)
 
-  var tempPath = fs.mkdtempSync(`${vectorVolume}${sep}`)
+  var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`)
 
   // Creating the sketch file where we are going to inject the shape group.
   await sketch.build(`${tempPath}/vector.sketch`).then(() => {
     console.log('Built')
   })
-  exec(`sh ${sketchtoolProxy} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr) => {
+  exec(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr) => {
     if (err) throw err
     console.log(stdout)
     console.log(stderr)
@@ -50,11 +50,11 @@ export default async function wrapVector (shapeGroup) {
  * Deletes the directory of the vectors if it reaches the limit on directory size
  */
 async function cleanVectorDir () {
-  fs.readdir(vectorVolume, (err, files) => {
+  fs.readdir(VECTOR_VOLUME, (err, files) => {
     if (err) throw err
     if (files.length >= cleanUpLimit) {
-      del(vectorVolume)
+      del(VECTOR_VOLUME)
     }
   })
-  return vectorVolume
+  return VECTOR_VOLUME
 }

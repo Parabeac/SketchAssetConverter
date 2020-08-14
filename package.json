@@ -21,9 +21,11 @@
     "@sketch-hq/sketch-core-assistant": "^6.0.0",
     "@sketch-hq/sketch-file-format-ts": "^5.1.1",
     "@types/node": "^14.0.27",
+    "aws-sdk": "^2.733.0",
     "del": "^5.1.0",
     "express": "^4.17.1",
     "jszip": "^3.5.0",
+    "s3": "^4.4.0",
     "sketch-file": "^0.3.3"
   }
 }

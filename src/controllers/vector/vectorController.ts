@@ -1,16 +1,16 @@
 import { Request, Response } from 'express';
 import { CrudController } from '../CrudController';
-import { getPagesImages, getPreview, getPagesImages } from '../../service/sketch_service'
+import wrapVector from "../../service/vector_service"
 
 
-
-export class SketchController extends CrudController {
+export class VectorController extends CrudController {
     
     public create(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): void {
         throw new Error("Method not implemented.");
     }
 
-    public read(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): void {
+    public read(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): void{
+        wrapVector(req.body)
         res.json(req.body);
     }
 
