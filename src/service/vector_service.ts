@@ -1,4 +1,5 @@
 import { SKETCHTOOL_PROXY, VECTOR_VOLUME } from '../config/constants'
+import { execSync } from 'child_process'
 
 const fs = require('fs-extra')
 const { sep } = require('path')
@@ -38,12 +39,13 @@ export default async function wrapVector (shapeGroup) {
   await sketch.build(`${tempPath}/vector.sketch`).then(() => {
     console.log('Built')
   })
-  exec(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr) => {
+  execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr) => {
     if (err) throw err
     console.log(stdout)
     console.log(stderr)
   })
-  cleanVectorDir()
+  var readStream = fs.createReadStream(`${tempPath}/vector.png`)
+  return readStream
 }
 
 /**
