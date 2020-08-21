@@ -12,12 +12,17 @@ const { Sketch, Page, Artboard, ShapeGroup } = require('sketch-constructor')
 const process = require('process');
 const sharp = require('sharp');
 
-const cleanUpLimit = 3
-
+const cleanUpLimit = 15
 fs.ensureDirSync(`${VECTOR_VOLUME}`)
 
 
 export default async function wrapVector(shapeGroup: any) {
+  //clean up the temp vectors
+  await cleanVectorDir()
+  if (!fs.existsSync(VECTOR_VOLUME)) {
+    fs.mkdirSync(VECTOR_VOLUME);
+  }
+
   //check platform
   return process.platform == 'darwin' ?
     sketchtoolProcess(shapeGroup) :
@@ -80,11 +85,10 @@ async function defaultImageProcess(shapeGroup: any) {
  * Deletes the directory of the vectors if it reaches the limit on directory size
  */
 async function cleanVectorDir() {
-  fs.readdir(VECTOR_VOLUME, (err, files) => {
-    if (err) throw err
-    if (files.length >= cleanUpLimit) {
-      del(VECTOR_VOLUME)
-    }
-  })
+  var files = fs.readdirSync(VECTOR_VOLUME);
+
+  if (files.length >= cleanUpLimit) {
+    await del(VECTOR_VOLUME)
+  }
   return VECTOR_VOLUME
 }
