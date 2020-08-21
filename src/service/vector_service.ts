@@ -6,17 +6,28 @@ const { sep } = require('path')
 const del = require('del')
 const { exec } = require('child_process')
 const { Sketch, Page, Artboard, ShapeGroup } = require('sketch-constructor')
+const process = require('process');
+const sharp = require('sharp');
 
 const cleanUpLimit = 3
 
 fs.ensureDirSync(`${VECTOR_VOLUME}`)
+
+
+export default async function wrapVector(shapeGroup: any) {
+  //check platform
+  return process.platform == 'darwin' ?
+    sketchtoolProcess(shapeGroup) :
+    defaultImageProcess(shapeGroup);
+}
 
 /**
  * wrapping the shape group into a SketchFile so the sketch tool
  * could be apply to it and extract as PNG.
  * @param shapeGroup - vector that is going to be converted into a SketchFile
  */
-export default async function wrapVector (shapeGroup) {
+async function sketchtoolProcess(shapeGroup: any) {
+  console.log(process.platform)
   var sketch = new Sketch()
   var group = new ShapeGroup(shapeGroup)
   var page = new Page({
@@ -49,9 +60,23 @@ export default async function wrapVector (shapeGroup) {
 }
 
 /**
+ * Performs the resizing that reflects the `shapeGroup` on a default picture.
+ * NOTE: this method executes because the Sketchtool is unavailable
+ */
+async function defaultImageProcess(shapeGroup: any) {
+  var group = new ShapeGroup(shapeGroup)
+  var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`)
+  await sharp('./assets/sketchtool-unavailable.png')
+    .resize({ height: Math.round(group.frame.height), width: Math.round(group.frame.width) })
+    .toFile(`${tempPath}/no-sketchfile-vector.png`);
+
+  return fs.createReadStream(`${tempPath}/no-sketchfile-vector.png`);
+}
+
+/**
  * Deletes the directory of the vectors if it reaches the limit on directory size
  */
-async function cleanVectorDir () {
+async function cleanVectorDir() {
   fs.readdir(VECTOR_VOLUME, (err, files) => {
     if (err) throw err
     if (files.length >= cleanUpLimit) {

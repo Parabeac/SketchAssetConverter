@@ -8,6 +8,7 @@ export class VectorController extends CrudController {
 
     public async create(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
         try {
+
             var stream = await wrapVector(req.body)
             res.writeHead(
                 200,
@@ -17,7 +18,8 @@ export class VectorController extends CrudController {
             );
             stream.pipe(res)
         } catch (error) {
-            console.log(error);
+            console.error(error);
+            res.status(400).send({ error: 'Could not process vector' });
         }
 
     }
