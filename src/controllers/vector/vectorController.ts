@@ -5,20 +5,25 @@ import { Stream } from 'stream';
 
 
 export class VectorController extends CrudController {
-    
-    public create(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): void {
-        throw new Error("Method not implemented.");
+
+    public async create(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
+        try {
+            var stream = await wrapVector(req.body)
+            res.writeHead(
+                200,
+                {
+                    "Content-Type": "image/png",
+                }
+            );
+            stream.pipe(res)
+        } catch (error) {
+            console.log(error);
+        }
+
     }
 
-    public async read(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void>{
-        var stream = await wrapVector(req.body)
-        res.writeHead(
-            200,
-            {
-              "Content-Type": "image/png",
-            }
-          );
-        stream.pipe(res)
+    public async read(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
     public update(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): void {
