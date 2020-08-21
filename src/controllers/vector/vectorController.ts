@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { CrudController } from '../CrudController';
 import wrapVector from "../../service/vector_service"
-import { Stream } from 'stream';
 
 
 export class VectorController extends CrudController {
@@ -25,14 +24,14 @@ export class VectorController extends CrudController {
     }
 
     public async read(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
-        throw new Error("Method not implemented.");
+        //NOTE: There is no Update method for the Vector.
     }
 
-    public update(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): void {
-        throw new Error("Method not implemented.");
+    public update(_req: Request<import("express-serve-static-core").ParamsDictionary>, _res: Response): void {
+        //NOTE: There is no Update method for the Vector.
     }
 
-    public delete(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): void {
-        throw new Error("Method not implemented.");
+    public delete(_req: Request<import("express-serve-static-core").ParamsDictionary>, _res: Response): void {
+         //NOTE: There is no Delete method for the Vector.
     }
 }

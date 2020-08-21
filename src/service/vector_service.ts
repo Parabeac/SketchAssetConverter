@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable no-var */
 import { SKETCHTOOL_PROXY, VECTOR_VOLUME } from '../config/constants'
 import { execSync } from 'child_process'
 
@@ -50,7 +53,7 @@ async function sketchtoolProcess(shapeGroup: any) {
   await sketch.build(`${tempPath}/vector.sketch`).then(() => {
     console.log('Built')
   })
-  execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr) => {
+  execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr:) => {
     if (err) throw err
     console.log(stdout)
     console.log(stderr)

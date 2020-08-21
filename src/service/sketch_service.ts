@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { SKETCHTOOL_PROXY, SKETCH_FILE_VOLUME } from '../config/constants'
 const { sep } = require('path')
 
@@ -32,5 +34,4 @@ export default async function getPagesImages (path) {
  * Extracting all the images from the sketch file.
  */
 export async function allImages () {
-  
 }
