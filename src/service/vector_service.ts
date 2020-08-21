@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable no-var */
 import { SKETCHTOOL_PROXY, VECTOR_VOLUME } from '../config/constants'
 import { execSync } from 'child_process'
 
@@ -16,7 +19,7 @@ fs.ensureDirSync(`${VECTOR_VOLUME}`)
  * could be apply to it and extract as PNG.
  * @param shapeGroup - vector that is going to be converted into a SketchFile
  */
-export default async function wrapVector (shapeGroup) {
+export default async function wrapVector (shapeGroup: any) {
   var sketch = new Sketch()
   var group = new ShapeGroup(shapeGroup)
   var page = new Page({
@@ -39,7 +42,7 @@ export default async function wrapVector (shapeGroup) {
   await sketch.build(`${tempPath}/vector.sketch`).then(() => {
     console.log('Built')
   })
-  execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr) => {
+  execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr:) => {
     if (err) throw err
     console.log(stdout)
     console.log(stderr)
@@ -52,7 +55,7 @@ export default async function wrapVector (shapeGroup) {
  * Deletes the directory of the vectors if it reaches the limit on directory size
  */
 async function cleanVectorDir () {
-  fs.readdir(VECTOR_VOLUME, (err, files) => {
+  fs.readdir(VECTOR_VOLUME, (err: any, files: any) => {
     if (err) throw err
     if (files.length >= cleanUpLimit) {
       del(VECTOR_VOLUME)
