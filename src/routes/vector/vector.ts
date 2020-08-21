@@ -9,6 +9,10 @@ router.post('/', (req: Request, res: Response) => {
     vectorController.create(req, res);
 });
 
+router.post('/local', (req: Request, res: Response) => {
+    vectorController.createLocal(req, res);
+});
+
 router.get('/', (req: Request, res: Response) => {
     vectorController.read(req, res);
 });
