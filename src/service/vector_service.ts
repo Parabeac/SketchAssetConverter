@@ -99,11 +99,11 @@ export async function processLocalVector(uuid: string, path: string) {
   //check platform
   var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`)
 
-  execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath}`, (err, stdout, stderr:) => {
-      if (err) throw err
-      console.log(stdout)
-      console.log(stderr)
+  execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath} --use-id-for-name`, (err, stdout, stderr:) => {
+    if (err) throw err
+    console.log(stdout)
+    console.log(stderr)
   })
-  var readStream = fs.createReadStream(`${tempPath}/vector.png`)
+  var readStream = fs.createReadStream(`${tempPath}/${uuid}.png`)
   return readStream
 }
