@@ -16,7 +16,7 @@ const cleanUpLimit = 15
 fs.ensureDirSync(`${VECTOR_VOLUME}`)
 
 
-export default async function wrapVector(shapeGroup: any) {
+export async function wrapVector(shapeGroup: any) {
   //clean up the temp vectors
   await cleanVectorDir()
   if (!fs.existsSync(VECTOR_VOLUME)) {
@@ -91,4 +91,19 @@ async function cleanVectorDir() {
     await del(VECTOR_VOLUME)
   }
   return VECTOR_VOLUME
+}
+
+
+export async function processLocalVector(uuid: string, path: string) {
+
+  //check platform
+  var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`)
+
+  execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath}`, (err, stdout, stderr:) => {
+      if (err) throw err
+      console.log(stdout)
+      console.log(stderr)
+  })
+  var readStream = fs.createReadStream(`${tempPath}/vector.png`)
+  return readStream
 }

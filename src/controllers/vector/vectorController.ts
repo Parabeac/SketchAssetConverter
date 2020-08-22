@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { CrudController } from '../CrudController';
-import wrapVector from "../../service/vector_service"
-import extractItem from "../../service/localVectorService"
+import { processLocalVector, wrapVector } from "../../service/vector_service"
 
 const fs = require('fs-extra')
 
@@ -26,13 +25,19 @@ export class VectorController extends CrudController {
     }
 
     public async createLocal(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
-        var body = req.body;
-        //Extract path
-        var path = body.path;
-        //Extract uuid
-        var uuid = body.uuid;
-
-
+        try {
+            var stream = await processLocalVector(req.body.uuid, req.body.path)
+            res.writeHead(
+                200,
+                {
+                    "Content-Type": "image/png",
+                }
+            );
+            stream.pipe(res)
+        } catch (error) {
+            console.error(error);
+            res.status(400).send({ error: 'Sketchtool is not installed or was not detected.' });
+        }
     }
 
     public async read(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
