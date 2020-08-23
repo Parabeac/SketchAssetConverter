@@ -58,13 +58,19 @@ async function sketchtoolProcess(group: typeof ShapeGroup) {
   await sketch.build(`${tempPath}/vector.sketch`).then(() => {
     console.log('Built')
   })
-  execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr:) => {
-    if (err) throw err
-    console.log(stdout)
-    console.log(stderr)
-  })
-  var readStream = fs.createReadStream(`${tempPath}/vector.png`)
-  return readStream
+  try {
+    execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr:) => {
+      if (err) throw err;
+      console.log(stdout)
+      console.log(stderr)
+    })
+    var readStream = fs.createReadStream(`${tempPath}/vector.png`)
+    return readStream
+  } catch (error) {
+    // platform is darwin but sketchtool could not be found
+    return defaultImageProcess(group.frame.width, group.frame.height);
+  }
+
 }
 
 /**
@@ -112,13 +118,23 @@ export async function processLocalVector(uuid: string, path: string, width: numb
     fs.mkdirSync(VECTOR_VOLUME);
   }
 
-  var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`)
+  var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`);
 
-  execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath} --use-id-for-name`, (err, stdout, stderr) => {
-    if (err) throw err
-    console.log(stdout)
-    console.log(stderr)
-  })
-  var readStream = fs.createReadStream(`${tempPath}/${uuid}.png`)
-  return readStream
+  try {
+    execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath} --use-id-for-name`, (err, stdout, stderr) => {
+      if (err) throw err;
+      console.log(stdout)
+      console.log(stderr)
+    });
+    var readStream = fs.createReadStream(`${tempPath}/${uuid}.png`)
+    return readStream
+  } catch (error) {
+    // platform is darwin but sketchtool could not be found
+    if (!width || !height) {
+      throw new Error('Sketch is not installed or was not detected.');
+    }
+    else {
+      return defaultImageProcess(width, height);
+    }
+  }
 }
