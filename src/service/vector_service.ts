@@ -24,7 +24,6 @@ export async function wrapVector(shapeGroup: any) {
   }
 
   //check platform
-  //TODO: check platform locally
   return process.platform == 'darwin' ?
     sketchtoolProcess(shapeGroup) :
     defaultImageProcess(shapeGroup);
@@ -96,20 +95,20 @@ async function cleanVectorDir() {
 
 
 export async function processLocalVector(uuid: string, path: string) {
+  //check platform
+  if (process.platform != 'darwin') {
+    throw new Error('Platform ' + process.platform + ' is unsupported.');
+  }
+
   //Clean directories before processing
   await cleanVectorDir();
   if (!fs.existsSync(VECTOR_VOLUME)) {
     fs.mkdirSync(VECTOR_VOLUME);
   }
 
-
-  //check platform
-  //TODO: throw error when platform is not darwin
-
-  // process.platform == 'darwin' ?
   var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`)
 
-  execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath} --use-id-for-name`, (err, stdout, stderr:) => {
+  execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath} --use-id-for-name`, (err, stdout, stderr) => {
     if (err) throw err
     console.log(stdout)
     console.log(stderr)
