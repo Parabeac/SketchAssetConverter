@@ -26,7 +26,7 @@ export class VectorController extends CrudController {
 
     public async createLocal(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
         try {
-            var stream = await processLocalVector(req.body.uuid, req.body.path)
+            var stream = await processLocalVector(req.body.uuid, req.body.path, req.body.width, req.body.height)
             res.writeHead(
                 200,
                 {

@@ -23,10 +23,12 @@ export async function wrapVector(shapeGroup: any) {
     fs.mkdirSync(VECTOR_VOLUME);
   }
 
+  var group = new ShapeGroup(shapeGroup);
+
   //check platform
   return process.platform == 'darwin' ?
-    sketchtoolProcess(shapeGroup) :
-    defaultImageProcess(shapeGroup);
+    sketchtoolProcess(group) :
+    defaultImageProcess(group.frame.width, group.frame.height);
 }
 
 /**
@@ -34,10 +36,8 @@ export async function wrapVector(shapeGroup: any) {
  * could be apply to it and extract as PNG.
  * @param shapeGroup - vector that is going to be converted into a SketchFile
  */
-async function sketchtoolProcess(shapeGroup: any) {
-  console.log(process.platform)
+async function sketchtoolProcess(group: typeof ShapeGroup) {
   var sketch = new Sketch()
-  var group = new ShapeGroup(shapeGroup)
   var page = new Page({
     name: 'testPage'
   })
@@ -71,11 +71,10 @@ async function sketchtoolProcess(shapeGroup: any) {
  * Performs the resizing that reflects the `shapeGroup` on a default picture.
  * NOTE: this method executes because the Sketchtool is unavailable
  */
-async function defaultImageProcess(shapeGroup: any) {
-  var group = new ShapeGroup(shapeGroup)
+async function defaultImageProcess(width: number, height: number) {
   var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`)
   await sharp('./assets/sketchtool-unavailable.png')
-    .resize({ height: Math.round(group.frame.height), width: Math.round(group.frame.width) })
+    .resize({ height: Math.round(height), width: Math.round(width) })
     .toFile(`${tempPath}/no-sketchfile-vector.png`);
 
   return fs.createReadStream(`${tempPath}/no-sketchfile-vector.png`);
@@ -94,10 +93,17 @@ async function cleanVectorDir() {
 }
 
 
-export async function processLocalVector(uuid: string, path: string) {
+export async function processLocalVector(uuid: string, path: string, width: number, height: number) {
   //check platform
   if (process.platform != 'darwin') {
-    throw new Error('Platform ' + process.platform + ' is unsupported.');
+    // Throw error if user did not pass width or height
+    if (!width || !height) {
+      throw new Error('Platform ' + process.platform + ' is unsupported.');
+    }
+    // Otherwise, return a default, resized image
+    else {
+      return defaultImageProcess(width, height);
+    }
   }
 
   //Clean directories before processing
