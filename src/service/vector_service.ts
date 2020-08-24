@@ -16,17 +16,19 @@ const cleanUpLimit = 15
 fs.ensureDirSync(`${VECTOR_VOLUME}`)
 
 
-export default async function wrapVector(shapeGroup: any) {
+export async function wrapVector(shapeGroup: any) {
   //clean up the temp vectors
   await cleanVectorDir()
   if (!fs.existsSync(VECTOR_VOLUME)) {
     fs.mkdirSync(VECTOR_VOLUME);
   }
 
+  var group = new ShapeGroup(shapeGroup);
+
   //check platform
   return process.platform == 'darwin' ?
-    sketchtoolProcess(shapeGroup) :
-    defaultImageProcess(shapeGroup);
+    sketchtoolProcess(group) :
+    defaultImageProcess(group.frame.width, group.frame.height);
 }
 
 /**
@@ -34,10 +36,8 @@ export default async function wrapVector(shapeGroup: any) {
  * could be apply to it and extract as PNG.
  * @param shapeGroup - vector that is going to be converted into a SketchFile
  */
-async function sketchtoolProcess(shapeGroup: any) {
-  console.log(process.platform)
+async function sketchtoolProcess(group: typeof ShapeGroup) {
   var sketch = new Sketch()
-  var group = new ShapeGroup(shapeGroup)
   var page = new Page({
     name: 'testPage'
   })
@@ -58,24 +58,29 @@ async function sketchtoolProcess(shapeGroup: any) {
   await sketch.build(`${tempPath}/vector.sketch`).then(() => {
     console.log('Built')
   })
-  execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr:) => {
-    if (err) throw err
-    console.log(stdout)
-    console.log(stderr)
-  })
-  var readStream = fs.createReadStream(`${tempPath}/vector.png`)
-  return readStream
+  try {
+    execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr:) => {
+      if (err) throw err;
+      console.log(stdout)
+      console.log(stderr)
+    })
+    var readStream = fs.createReadStream(`${tempPath}/vector.png`)
+    return readStream
+  } catch (error) {
+    // platform is darwin but sketchtool could not be found
+    return defaultImageProcess(group.frame.width, group.frame.height);
+  }
+
 }
 
 /**
  * Performs the resizing that reflects the `shapeGroup` on a default picture.
  * NOTE: this method executes because the Sketchtool is unavailable
  */
-async function defaultImageProcess(shapeGroup: any) {
-  var group = new ShapeGroup(shapeGroup)
+async function defaultImageProcess(width: number, height: number) {
   var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`)
   await sharp('./assets/sketchtool-unavailable.png')
-    .resize({ height: Math.round(group.frame.height), width: Math.round(group.frame.width) })
+    .resize({ height: Math.round(height), width: Math.round(width) })
     .toFile(`${tempPath}/no-sketchfile-vector.png`);
 
   return fs.createReadStream(`${tempPath}/no-sketchfile-vector.png`);
@@ -91,4 +96,45 @@ async function cleanVectorDir() {
     await del(VECTOR_VOLUME)
   }
   return VECTOR_VOLUME
+}
+
+
+export async function processLocalVector(uuid: string, path: string, width: number, height: number) {
+  //check platform
+  if (process.platform != 'darwin') {
+    // Throw error if user did not pass width or height
+    if (!width || !height) {
+      throw new Error('Platform ' + process.platform + ' is unsupported.');
+    }
+    // Otherwise, return a default, resized image
+    else {
+      return defaultImageProcess(width, height);
+    }
+  }
+
+  //Clean directories before processing
+  await cleanVectorDir();
+  if (!fs.existsSync(VECTOR_VOLUME)) {
+    fs.mkdirSync(VECTOR_VOLUME);
+  }
+
+  var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`);
+
+  try {
+    execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath} --use-id-for-name`, (err, stdout, stderr) => {
+      if (err) throw err;
+      console.log(stdout)
+      console.log(stderr)
+    });
+    var readStream = fs.createReadStream(`${tempPath}/${uuid}.png`)
+    return readStream
+  } catch (error) {
+    // platform is darwin but sketchtool could not be found
+    if (!width || !height) {
+      throw new Error('Sketch is not installed or was not detected.');
+    }
+    else {
+      return defaultImageProcess(width, height);
+    }
+  }
 }
