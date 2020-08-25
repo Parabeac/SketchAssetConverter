@@ -7,7 +7,6 @@ import { execSync } from 'child_process'
 const fs = require('fs-extra')
 const { sep } = require('path')
 const del = require('del')
-const { exec } = require('child_process')
 const { Sketch, Page, Artboard, ShapeGroup } = require('sketch-constructor')
 const process = require('process');
 const sharp = require('sharp');
@@ -59,11 +58,7 @@ async function sketchtoolProcess(group: typeof ShapeGroup) {
     console.log('Built')
   })
   try {
-    execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`, (err, stdout, stderr:) => {
-      if (err) throw err;
-      console.log(stdout)
-      console.log(stderr)
-    })
+    execSync(`sh ${SKETCHTOOL_PROXY} export artboards ${tempPath}/vector.sketch --output=${tempPath}`);
     var readStream = fs.createReadStream(`${tempPath}/vector.png`)
     return readStream
   } catch (error) {
@@ -121,11 +116,7 @@ export async function processLocalVector(uuid: string, path: string, width: numb
   var tempPath = fs.mkdtempSync(`${VECTOR_VOLUME}${sep}`);
 
   try {
-    execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath} --use-id-for-name`, (err, stdout, stderr) => {
-      if (err) throw err;
-      console.log(stdout)
-      console.log(stderr)
-    });
+    execSync(`sh ${SKETCHTOOL_PROXY} export layers ${path} --item=${uuid} --output=${tempPath} --use-id-for-name`);
     var readStream = fs.createReadStream(`${tempPath}/${uuid}.png`)
     return readStream
   } catch (error) {

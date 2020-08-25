@@ -40,9 +40,9 @@ export class VectorController extends CrudController {
         }
     }
 
-    public async read(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
+    public async read(_req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
         fs.readFile('/Users/ivanvigliante/Documents/parabeac/Parabeac-Core/TestingSketch/inspyred_demo.sketch',
-            function (err, data) {
+            function (_err: any, data: any) {
                 res.writeHead(200, { 'Content-Type': 'text/html' });
                 res.write(data);
                 return res.end();
