@@ -1,7 +1,8 @@
 import express from 'express'
 import { PORT } from './config/constants'
 import { sketchRouter, vectorRouter } from './routes'
-const bodyParser = require('body-parser')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const bodyParser = require('body-parser');
 const app = express()
 
 app.use(express.json())
