@@ -136,7 +136,8 @@ export async function processLocalVector(uuid: string, path: string, width: numb
 
       await execShell(` sh ${SKETCHTOOL_PROXY} export layers ${dir}/${nameSketchFile} --item=${uuid} --output=${dir} --use-id-for-name`); 
       const imagePng = await fs.createReadStream(`${dir}/${uuid}.png`);
-      await execShell(` rm ${dir}/*.png`);
+      await execShell(` rm ${dir}/${uuid}.png`);
+      await execShell(` rm ${dir}/${uuid}@*x.png`);
       return imagePng;  
     }
     /* 
