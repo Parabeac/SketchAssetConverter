@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-var */
-import { SKETCHTOOL_PROXY, VECTOR_VOLUME, ZIP_SKETCH_COMMAND } from '../config/constants'
+import { SKETCHTOOL_PROXY, VECTOR_VOLUME } from '../config/constants'
 import { exec, execSync } from 'child_process';
 const fs = require('fs-extra')
 const { sep } = require('path')
@@ -113,39 +113,11 @@ export async function processLocalVector(uuid: string, path: string, width: numb
   }
 
   try{
-    /* 
-    This method will remove a shadow if any from the sketch file.
-    It will return a path and this will path point to the 
-    sketchfile to be used to export a layer
-    */
-    const newDir = await removeShadows(uuid, path);
 
-    /* 
-      If this statement is true, it means that no shadow was found
-      and procced as normal exporting the layer with the given UUID,
-      then just read the png image, delete the exported image or images
-      depending on the export config of the given UUID layer, and lastly
-      just return the image.
-    */
-    if (newDir === path) {
-
-      const splitPathArray = path.split('/',);
-      const nameSketchFile = splitPathArray[splitPathArray.length -1];
-      splitPathArray.pop();
-      const dir = splitPathArray.join('/');
-
-      await execShell(` sh ${SKETCHTOOL_PROXY} export layers ${dir}/${nameSketchFile} --item=${uuid} --output=${dir} --use-id-for-name`); 
-      const imagePng = await fs.createReadStream(`${dir}/${uuid}.png`);
-      await execShell(` rm ${dir}/*.png`);
-      return imagePng;  
-    }
-    /* 
-      Else, if a shadow if found, the new directory contains a modified version(meaning taking off the shadow) 
-      of the original sketch file, use sketchtool to export the UUID layer, 
-      read the image, delete the new directory. Lastly send back the image/
-    */
-    await execShell(` sh ${SKETCHTOOL_PROXY} export layers ${newDir}/modFile.sketch --item=${uuid} --output=${newDir} --use-id-for-name`); 
+    const newDir = await imageExtractionAndShadowRemoval(uuid, path);
+    await execShell(` sh ${SKETCHTOOL_PROXY} export layers ${newDir}/modSketch.sketch --item=${uuid} --output=${newDir} --use-id-for-name`); 
     const imagePng = await fs.createReadStream(`${newDir}/${uuid}.png`);
+    console.log('deleting temp folder');
     await execShell(`rm -rf ${newDir}`);
     return imagePng;
 
@@ -160,7 +132,7 @@ export async function processLocalVector(uuid: string, path: string, width: numb
   }
 }
 
-async function removeShadows(uuid: string, path: string): Promise<string>{
+async function imageExtractionAndShadowRemoval(uuid: string, path: string): Promise<string>{
   try {
     
     /* 
@@ -183,12 +155,7 @@ async function removeShadows(uuid: string, path: string): Promise<string>{
     await execShell( `unzip  ${newDir}/${nameSketchFile} -d ${newDir}` ); 
     
 
-    /* 
-      Here start the process of finding the shadow, it will go through 3 layers,
-      if the shadow was found, the code will disable the shadow and zip back up
-      all the files to create a new sketch file under the name of modFile.sketch
-    */
-    let foundImage = false;
+    let foundImage;
     const pages = await fs.readdir( `${newDir}/pages/` );
 
     for (const page of pages) {
@@ -204,11 +171,12 @@ async function removeShadows(uuid: string, path: string): Promise<string>{
         if (uuid === layerObject["do_objectID"]) {
           // first layer
           try {
-            const checkIfShadow = layerObject["style"]["shadows"][0];
-            if (checkIfShadow !== undefined) {
+            if (layerObject["style"]["shadows"][0] !== undefined) {
               layerObject["style"]["shadows"][0]["isEnabled"] = false;
-              foundImage = true;
+              foundImage = layerObject;
+              break;
             }
+            foundImage = layerObject;
             break;
           } catch (error) {
             throw new Error("There's an error inside the first list of layers");
@@ -222,11 +190,12 @@ async function removeShadows(uuid: string, path: string): Promise<string>{
           if (uuid === layerObjectFromSecondList["do_objectID"]) {
             // Second layer
             try {
-              const checkIfShadowOnSecondLayer = layerObjectFromSecondList["style"]["shadows"][0];
-              if (checkIfShadowOnSecondLayer !== undefined) {
+              if (layerObjectFromSecondList["style"]["shadows"][0] !== undefined) {
                 layerObjectFromSecondList["style"]["shadows"][0]["isEnabled"] = false; 
-                foundImage = true;
+                foundImage = layerObjectFromSecondList;
+                break;
               }
+              foundImage = layerObjectFromSecondList;
               break;
 
             } catch (error) {
@@ -242,40 +211,102 @@ async function removeShadows(uuid: string, path: string): Promise<string>{
             if (layerObjectFromThirdList["do_objectID"] === uuid) {
               // Third layer
               try {
-                const checkIfShadowOnThirdLayer = layerObjectFromThirdList["style"]["shadows"][0];
-                if (checkIfShadowOnThirdLayer !== undefined) {
+                if (layerObjectFromThirdList["style"]["shadows"][0] !== undefined) {
                   layerObjectFromThirdList["style"]["shadows"][0]["isEnabled"] = false;
-                  foundImage = true;
-                  
+                  foundImage = layerObjectFromThirdList;
+                  break;
                 }
+                foundImage = layerObjectFromThirdList;
+                break;
               } catch (error) {
                 throw new Error("There's an error inside the third list of layers");
               }
-
             }
+            // TODO: IT IS FIXED BUT DOUBLE CHECK AND MAKE IT MORE CLEAN AND TERMINAL READABLE
+            const fourthListOfLayers = layerObjectFromThirdList['layers'];
+            for (const fourthIndex in fourthListOfLayers) {
+              const layerObjectFromFourthList = fourthListOfLayers[fourthIndex];
+
+              if (layerObjectFromFourthList['do_objectID'] === uuid) {
+                //fourth layer
+                try {
+                  if (layerObjectFromFourthList['style']['shadows'][0] !== undefined) {
+                    layerObjectFromFourthList['style']['shadows'][0]['isEnabled'] = false;
+                    foundImage = layerObjectFromFourthList;
+                    break;
+                  }
+                  foundImage = layerObjectFromFourthList;
+                  break;
+
+                } catch (error) {
+                  throw new Error("There's an error inside the fourth list of layers");
+                }
+              }
+
+                const fifthListOfLayers = layerObjectFromFourthList['layers'];
+                for (const fifthIndex in fifthListOfLayers) {
+                  const layerObjectFromFifthList = fifthListOfLayers[fifthIndex];
+
+                  if (layerObjectFromFifthList['do_objectID'] === uuid) {
+                    //fourth layer
+                    try {
+                      if (layerObjectFromFifthList['style']['shadows'][0] !== undefined) {
+                        layerObjectFromFifthList['style']['shadows'][0]['isEnabled'] = false;
+                        foundImage = layerObjectFromFifthList;
+                        break;
+                      }
+                      foundImage = layerObjectFromFifthList;
+                      break;
+
+                    } catch (error) {
+                      throw new Error("There's an error inside the fourth list of layers");
+                    }
+                  }
+
+                  //LATERTODO: IF doing the sixth layer do after here
+              }
+          }
+
           }
         }
       }
 
+      //INFO: This function should always execute, since it has to find the image
       if (foundImage) {
-        const jsonString = JSON.stringify(jsonFormat);
+        console.log('Image was found');
+        const newSketch = new Sketch();
 
-        await fs.writeFile(page, jsonString, function (err: Error) {
-          if (err) throw err;
-          console.log("Saved!");
-        });
-        foundImage = false;
+        const page = new Page({ });
 
-        await execShell( `mv ${page} ${newDir}/pages/` );
-        await execShell( `cd ${newDir}/ ; ${ZIP_SKETCH_COMMAND}` );
-        console.log('Returned the new path');
+        if (foundImage['_class'] === 'artboard') {
+          console.log('true for artboard');
+
+          const artboard = new Artboard(foundImage);
+          artboard.do_objectID = uuid;
+          await page.addArtboard(artboard);
+
+        } else {
+
+          await page.addLayer(foundImage);
+        }
+
+        await newSketch.addPage({ name: 'My Page' });
+
+        await newSketch.addPage(page);
+
+        await newSketch.build('modSketch.sketch', 0 );
+
+        await execShell( `mv modSketch.sketch ${newDir}` );
+
+        foundImage = null;
         return newDir;
       }
     }
+    console.log('image was not found');
+    console.log('deleting temp folder');
+    await execShell(`rm -rf ${newDir}`);
 
-    console.log('Returned the original path');
-    execShell(`rm -rf ${newDir}`);
-    return path;
+    throw new Error("There's an error inside the removeShadows methods more specifically foundImage");
   } catch (error) {
     throw new Error("There's an error inside the removeShadows methods");
   }
