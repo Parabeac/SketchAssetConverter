@@ -18,9 +18,3 @@ export const VECTOR_VOLUME = './dist/vector_volumes'
  * Path where the temp. data of the vectors are saved.
  */
 export const SKETCH_FILE_VOLUME = './dist/sketch_files'
-
-/* 
-    Command to zip up the files and make it a sketch file
-*/
-export const ZIP_SKETCH_COMMAND =
-    "zip -r -X modFile.sketch images pages previews text-previews document.json meta.json user.json ";

@@ -2,14 +2,14 @@ import { Request, Response } from 'express';
 import { CrudController } from '../CrudController';
 import { processLocalVector, wrapVector } from "../../service/vector_service"
 
-import fs from 'fs-extra';
+const fs = require('fs-extra')
 
 export class VectorController extends CrudController {
 
     public async create(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
         try {
 
-            const stream = await wrapVector(req.body)
+            var stream = await wrapVector(req.body)
             res.writeHead(
                 200,
                 {
@@ -26,14 +26,14 @@ export class VectorController extends CrudController {
 
     public async createLocal(req: Request<import("express-serve-static-core").ParamsDictionary>, res: Response): Promise<void> {
         try {
-            const stream = await processLocalVector(req.body.uuid, req.body.path, req.body.width, req.body.height);
+            var stream = await processLocalVector(req.body.uuid, req.body.path, req.body.width, req.body.height)
             res.writeHead(
                 200,
                 {
                     "Content-Type": "image/png",
                 }
             );
-            stream.pipe(res);
+            stream.pipe(res)
         } catch (error) {
             console.error(error);
             res.status(400).send({ error: 'Sketchtool is not installed or was not detected.' });
