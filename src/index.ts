@@ -15,6 +15,13 @@ app.use('/vector', vectorRouter)
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`)
+}).on('error', (err: Error) => {
+  if (err.message.includes('EADDRINUSE')) {
+    console.log(`An ERROR occurred: Try closing the port: ${PORT} and try again! ('killall node' OR 'killall npm')`)
+  }
+  else {
+    console.log(err)
+  }
 })
 
 function loggerMiddleware(request: express.Request, _response: express.Response, next: () => void) {
